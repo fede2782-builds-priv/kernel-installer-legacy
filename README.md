@@ -8,6 +8,8 @@ Moreover this will place a addon.d file if the ROM supports it in the /system/ad
 
 ## Building
 
+Adapt the values in config.sh file to your needs. 
+
 On Windows, place the kernel executable named as `Image` just select all file and ZIP file using built-in zip function or by using 7-zip with default compression level.
 
 On Linux just use the `zip` command part of the `zip` in Debian-based distros, run the following in the repository after copying the kernel image as `Image`. 
