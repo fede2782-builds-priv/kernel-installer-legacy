@@ -12,6 +12,10 @@ On Windows, place the kernel executable named as `Image` just select all file an
 
 On Linux just use the `zip` command part of the `zip` in Debian-based distros, run the following in the repository after copying the kernel image as `Image`. 
 
- ```bash
-zip -r output-flashable.zip *"
+```bash
+zip -r output-flashable.zip *```
 
+## Credits
+
+- [Magisk](https://github.com/topjohnwu/Magisk) for `magiskboot` utility and `busybox` prebuilt for arm64-v8a.
+- [MindTheGapps](https://gitlab.com/MindTheGapps/vendor_gapps) for a few functions for recovery installer script.
