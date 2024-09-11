@@ -1,0 +1,100 @@
+#!/sbin/sh
+
+OUTFD="/proc/self/fd/$2"
+ZIP=$3
+
+ui_print() {
+  echo "ui_print $1" > "$OUTFD";
+  echo "ui_print" > "$OUTFD";
+}
+
+cleanup() {
+  umount /system_mount
+  rm -rf /system_mount
+}
+
+error() {
+  ui_print "$1"
+  cleanup
+  exit 1
+}
+
+mkdir -p /tmp
+cd /tmp
+rm -rf config.sh
+
+ui_print "Extracting files"
+unzip "$ZIP"
+
+source /tmp/config.sh
+
+ui_print "Starting installation of KernelSU for $DEVICE_NAME ($DEVICE_CODENAME)..."
+
+CURRENT_SLOT="$(getprop ro.boot.slot_suffix)"
+
+IS_SLOT=false
+
+if [["$CURRENT_SLOT" == "_a" || "$CURRENT_SLOT" == "_b" ]]; then
+    IS_SLOT=true
+fi
+
+if [[ $IS_SLOT == true ]]; then
+    SYSTEM_BLOCK=$SYSTEM_BLOCK$CURRENT_SLOT
+    BOOT_BLOCK=$BOOT_BLOCK$CURRENT_SLOT
+fi
+
+#ui_print "Starting installation of KernelSU for Moto G7 (river)..."
+
+blockdev --setrw "$SYSTEM_BLOCK"
+blockdev --setrw "$BOOT_BLOCK"
+
+DEVICE="$(getprop ro.product.vendor.device)"
+if [[ "$DEVICE" != "$DEVICE_CODENAME" ]]; then
+  error "Unsupported device or recovery, please use LineageOS or crDroid recovery on Moto G7 (river)"
+fi
+
+ui_print "Device check passed successfully! Proceeding with installation"
+
+ui_print "Mounting system partition for installing addon.d kernel survival script"
+mkdir -p /system_mount
+mount $SYSTEM_BLOCK /system_mount
+
+if [[ -d /system_mount/system/addon.d && $IS_SLOT == true ]]; then
+  ui_print "Installing addon.d kernel survival script as 99-kernel.sh"
+  rm -rf /system_mount/system/addon.d/99-kernel.sh
+  cp 99-kernel.sh /system_mount/system/addon.d/99-kernel.sh || ui_print "WARNING: Unable to copy addon.d file, proceeding anyways"
+  chown root:root /system_mount/system/addon.d/99-kernel.sh || ui_print "WARNING: Unable to set ownership of addon.d file, proceeding anyways"
+  chmod 755 /system_mount/system/addon.d/99-kernel.sh || ui_print "WARNING: Unable to set permissions of addon.d file, proceeding anyways"
+  chcon -h u:object_r:system_file:s0 /system_mount/system/addon.d/99-kernel.sh || ui_print "WARNING: Unable to set SELinux context (pointed file) of addon.d file, proceeding anyways"
+  chcon u:object_r:system_file:s0 /system_mount/system/addon.d/99-kernel.sh || ui_print "WARNING: Unable to set SELinux context (symlink) of addon.d file, proceeding anyways"
+fi
+#else
+#    cp 99-kernel.sh /system_mount/addon.d/99-kernel.sh
+#    chown root:root /system_mount/addon.d/99-kernel.sh
+#    chmod 755 /system_mount/addon.d/99-kernel.sh
+#    chcon -h u:object_r:system_file:s0 /system_mount/addon.d/99-kernel.sh
+#    chcon u:object_r:system_file:s0 /system_mount/addon.d/99-kernel.sh
+#fi
+
+ui_print "Umounting system..."
+cleanup
+
+ui_print "Unpacking current boot image"
+mkdir -p unpacked_bootimage
+chmod +x magiskboot
+cd unpacked_bootimage
+../magiskboot unpack "$BOOT_BLOCK" || error "ERROR: Failed to unpack current boot image"
+ui_print "Copying KernelSU kernel"
+cp ../Image kernel || error "ERROR: Failed to copy new kernel"
+ui_print "Repacking new boot image"
+../magiskboot repack "$BOOT_BLOCK" || error "ERROR: Failed to repack new boot image"
+ui_print "Flashing new boot image"
+dd if=new-boot.img of="$BOOT_BLOCK" || error "ERROR: Failed to flash new boot image"
+
+ui_print "Done!"
+exit 0
+
+
+
+
+
