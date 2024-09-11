@@ -13,7 +13,8 @@ On Windows, place the kernel executable named as `Image` just select all file an
 On Linux just use the `zip` command part of the `zip` in Debian-based distros, run the following in the repository after copying the kernel image as `Image`. 
 
 ```bash
-zip -r output-flashable.zip *```
+zip -r output-flashable.zip *
+```
 
 ## Credits
 
