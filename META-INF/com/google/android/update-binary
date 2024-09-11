@@ -21,7 +21,7 @@ error() {
 
 mkdir -p /tmp
 cd /tmp
-rm -rf config.sh
+rm -rf *
 
 ui_print "Extracting files"
 unzip "$ZIP"
@@ -32,18 +32,12 @@ ui_print "Starting installation of KernelSU for $DEVICE_NAME ($DEVICE_CODENAME).
 
 CURRENT_SLOT="$(getprop ro.boot.slot_suffix)"
 
-IS_SLOT=false
-
-if [["$CURRENT_SLOT" == "_a" || "$CURRENT_SLOT" == "_b" ]]; then
-    IS_SLOT=true
-fi
-
 if [[ $IS_SLOT == true ]]; then
     SYSTEM_BLOCK=$SYSTEM_BLOCK$CURRENT_SLOT
     BOOT_BLOCK=$BOOT_BLOCK$CURRENT_SLOT
+    ui_print "Target system block is $SYSTEM_BLOCK"
+    ui_print "Target boot block is $BOOT_BLOCK"
 fi
-
-#ui_print "Starting installation of KernelSU for Moto G7 (river)..."
 
 blockdev --setrw "$SYSTEM_BLOCK"
 blockdev --setrw "$BOOT_BLOCK"
