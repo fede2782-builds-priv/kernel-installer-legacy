@@ -25,6 +25,8 @@ if [[ "$CURRENT_SLOT" == "_a" ]]; then
     OTHER_SLOT="_b"
 elif [[ "$CURRENT_SLOT" == "_b" ]]; then
     OTHER_SLOT="_a"
+else
+    OTHER_SLOT=""
 fi
 
 NEWBOOT=/dev/block/bootdevice/by-name/boot$OTHER_SLOT
