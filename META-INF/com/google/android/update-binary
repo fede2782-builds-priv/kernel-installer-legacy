@@ -35,12 +35,15 @@ CURRENT_SLOT="$(getprop ro.boot.slot_suffix)"
 if [[ $IS_SLOT == true ]]; then
     SYSTEM_BLOCK=$SYSTEM_BLOCK$CURRENT_SLOT
     BOOT_BLOCK=$BOOT_BLOCK$CURRENT_SLOT
+    VENDOR_BLOCK=$VENDOR_BLOCK$CURRENT_SLOT
     ui_print "Target system block is $SYSTEM_BLOCK"
     ui_print "Target boot block is $BOOT_BLOCK"
+    ui_print "Target vendor block is $VENDOR_BLOCK"
 fi
 
 blockdev --setrw "$SYSTEM_BLOCK"
 blockdev --setrw "$BOOT_BLOCK"
+blockdev --setrw "$VENDOR_BLOCK"
 
 DEVICE="$(getprop ro.product.vendor.device)"
 if [[ "$DEVICE" != "$DEVICE_CODENAME" ]]; then
@@ -70,9 +73,6 @@ fi
 #    chcon u:object_r:system_file:s0 /system_mount/addon.d/99-kernel.sh
 #fi
 
-ui_print "Umounting system..."
-cleanup
-
 ui_print "Unpacking current boot image"
 mkdir -p unpacked_bootimage
 chmod +x magiskboot
@@ -84,6 +84,23 @@ ui_print "Repacking new boot image"
 ../magiskboot repack "$BOOT_BLOCK" || error "ERROR: Failed to repack new boot image"
 ui_print "Flashing new boot image"
 dd if=new-boot.img of="$BOOT_BLOCK" || error "ERROR: Failed to flash new boot image"
+
+if [[ $IS_MODULES == true ]]; then
+  if [[ "$MODULE_PARTITION" == "vendor" ]]; then
+    ui_print "Mounting vendor partition for modules installation"
+    mkdir -p /vendor_mount
+    mount $VENDOR_BLOCK /vendor_mount
+    rm -rf "/vendor_mount/${MODULES_DIR}/modules/*"
+    cp -r /tmp/modules/* "/vendor_mount/${MODULES_DIR}/modules/"
+    ui_print "Umounting vendor"
+    umount /vendor_mount
+    rm -rf /vendor_mount
+  fi
+fi
+
+ui_print "Umounting system..."
+cleanup
+
 
 ui_print "Done!"
 exit 0
