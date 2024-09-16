@@ -6,5 +6,7 @@ DEVICE_CODENAME="river"
 DEVICE_NAME="Moto G7"
 IS_SLOT=true
 IS_MODULES=true
-MODULE_PARTITION="vendor"
 MODULES_DIR="lib"
+
+# Currently only vendor is supported
+MODULE_PARTITION="vendor"
